@@ -31,7 +31,8 @@ int forking_server(int sfd) {
 	}
 	else if(pid == 0) {
 	    close(sfd);
-	    HTTPStatus = handle_request(r);
+	    HTTPStatus status = handle_request(r);
+	    debug("Request Status: %s", http_status_string(status));
 	    exit(1);
 	}
 	else {
