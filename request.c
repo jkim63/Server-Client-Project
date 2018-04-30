@@ -167,6 +167,9 @@ int parse_request_method(Request *r) {
     method = strtok(buffer, " ");
     uri = strtok(NULL, " ");
 
+    method= strtok(line,' ');
+    uri= strtok(NULL, ' ');
+
     /* Parse query from uri */
     query= strchr(uri, '?');
     query = '\0';
@@ -178,6 +181,10 @@ int parse_request_method(Request *r) {
     r->uri= strdup(uri);
     r->query= strdup(query);
 
+    /* Record method, uri, and query in request struct */
+    r->method= strdup(method);
+    r->uri= strdup(uri);
+    r->query= strdup(query);
     debug("HTTP METHOD: %s", r->method);
     debug("HTTP URI:    %s", r->uri);
     debug("HTTP QUERY:  %s", r->query);
