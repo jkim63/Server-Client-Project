@@ -39,16 +39,30 @@ char * determine_mimetype(const char *path) {
     FILE *fs = NULL;
 
     /* Find file extension */
-    if (strrchr(path, '.') + 1) {
+    if (strrchr(path, '.') == NULL) {
+        return DefaultMimeType;
+    } else {
         ext = strrchr(path, '.') + 1;
     }
 
     /* Open MimeTypesPath file */
-    fs = fdopen(path, "w+")
+    fs = fopen(path, "w+");
+    if (!fs) {
+        fprintf(stderr, "Unable to fopen: %s\n", strerror(errno));
+        fclose(fs);
+    }
 
     /* Scan file for matching file extensions */
+    while (fgets(buffer, BUFSIZ, fs)) {
+        token = strtok(buffer, " ");
+        token = skip_whitespace(token);
+        if (streq(token, ext)) {
+            mimetype = token;
+            return mimetype;
+        }
+    }
 
-    return NULL;
+    return DefaultMimeType;
 }
 
 /**
@@ -70,11 +84,14 @@ char * determine_mimetype(const char *path) {
 char * determine_request_path(const char *uri) {
     char* resol_path = NULL;
     realpath(uri, resol_path);  //if error, returns NULL
-    size_t len= strlen(RootPath);
-    if (strncmp(RootPath, resol_path, len)!=0){
-        return -1;
+    size_t len = strlen(RootPath);
+
+    if (strncmp(RootPath, resol_path, len) != 0){
+        return NULL;
     }
-    return resol_path;
+
+    char* result = strdup(resol_path);
+    return result;
 }
 
 /**
@@ -94,7 +111,11 @@ const char * http_status_string(HTTPStatus status) {
         "418 I'm A Teapot",
     };
 
-    return NULL;
+    if (status >= 0 && status < 4) {
+        return StatusStrings[status];
+    } else {
+        return NULL;
+    }
 }
 
 /**
@@ -104,8 +125,8 @@ const char * http_status_string(HTTPStatus status) {
  * @return  Point to first whitespace character in s.
  **/
 char * skip_nonwhitespace(char *s) {
-    while (*s != ' ' || *s!= '\t' || *s!= '\n' || *s!= '\v' || *s != '\f' ||    *s!= '\r'){
-        *s++;
+    while (!isspace(*s)) {
+        s++;
     }
 
     return s;
@@ -118,10 +139,9 @@ char * skip_nonwhitespace(char *s) {
  * @return  Point to first non-whitespace character in s.
  **/
 char * skip_whitespace(char *s) {
-    while (*s == ' ' || *s== '\t' || *s== '\n' || *s== '\v' || *s == '\f' ||    *s== '\r'){
-        *s++;
+    while (isspace(*s)) {
+        s++;
     }
-
     return s;
 }
 
