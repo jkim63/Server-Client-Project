@@ -64,7 +64,10 @@ char * determine_mimetype(const char *path) {
  * string must later be free'd.
  **/
 char * determine_request_path(const char *uri) {
-    return NULL;
+    char* resol_path = NULL;
+    realpath(uri, resol_path);  //if error, returns NULL
+    return resol_path;
+
 }
 
 /**
@@ -94,6 +97,10 @@ const char * http_status_string(HTTPStatus status) {
  * @return  Point to first whitespace character in s.
  **/
 char * skip_nonwhitespace(char *s) {
+     while (*s != ' ' || *s!= '\t' || *s!= '\n' || *s!= '\v' || *s != '\f' ||    *s!= '\r'){
+        *s++;
+    }
+
     return s;
 }
 
@@ -104,6 +111,10 @@ char * skip_nonwhitespace(char *s) {
  * @return  Point to first non-whitespace character in s.
  **/
 char * skip_whitespace(char *s) {
+     while (*s == ' ' || *s== '\t' || *s== '\n' || *s== '\v' || *s == '\f' ||    *s== '\r'){
+        *s++;
+    }
+
     return s;
 }
 
