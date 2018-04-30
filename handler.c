@@ -28,7 +28,7 @@ HTTPStatus handle_error(Request *request, HTTPStatus status);
  * On error, handle_error should be used with an appropriate HTTP status code.
  **/
 HTTPStatus  handle_request(Request *r) {
-    HTTPStatus result;
+    //HTTPStatus result;
 
     /* Parse request */
 
@@ -37,8 +37,9 @@ HTTPStatus  handle_request(Request *r) {
 
     /* Dispatch to appropriate request handler type based on file type */
 
-    log("HTTP REQUEST STATUS: %s", http_status_string(result));
-    return result;
+    //log("HTTP REQUEST STATUS: %s", http_status_string(result));
+    //return result;
+    return EXIT_SUCCESS;
 }
 
 /**
@@ -53,8 +54,8 @@ HTTPStatus  handle_request(Request *r) {
  * with HTTP_STATUS_NOT_FOUND.
  **/
 HTTPStatus  handle_browse_request(Request *r) {
-    struct dirent **entries;
-    int n;
+    //struct dirent **entries;
+    //int n;
 
     /* Open a directory for reading or scanning */
 
@@ -78,10 +79,10 @@ HTTPStatus  handle_browse_request(Request *r) {
  * HTTP_STATUS_NOT_FOUND.
  **/
 HTTPStatus  handle_file_request(Request *r) {
-    FILE *fs;
+    /* FILE *fs;
     char buffer[BUFSIZ];
     char *mimetype = NULL;
-    size_t nread;
+    size_t nread;*/
 
     /* Open file for reading */
 
@@ -94,9 +95,9 @@ HTTPStatus  handle_file_request(Request *r) {
     /* Close file, flush socket, deallocate mimetype, return OK */
     return HTTP_STATUS_OK;
 
-fail:
+//fail:
     /* Close file, free mimetype, return INTERNAL_SERVER_ERROR */
-    return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+    //return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 }
 
 /**
@@ -112,8 +113,8 @@ fail:
  * HTTP_STATUS_INTERNAL_SERVER_ERROR.
  **/
 HTTPStatus handle_cgi_request(Request *r) {
-    FILE *pfs;
-    char buffer[BUFSIZ];
+    //FILE *pfs;
+    //char buffer[BUFSIZ];
 
     /* Export CGI environment variables from request structure:
      * http://en.wikipedia.org/wiki/Common_Gateway_Interface */
@@ -138,7 +139,7 @@ HTTPStatus handle_cgi_request(Request *r) {
  * notify the user of the error.
  **/
 HTTPStatus  handle_error(Request *r, HTTPStatus status) {
-    const char *status_string = http_status_string(status);
+    //const char *status_string = http_status_string(status);
 
     /* Write HTTP Header */
 
