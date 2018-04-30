@@ -27,7 +27,7 @@ clean:
 %.o:				%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-spidey: forking.o handler.o request.o single.o socket.o spidy.o utils.o
+spidey: forking.o handler.o request.o single.o socket.o spidey.o utils.o
 	$(LD) $(LDFLAGS) -o $@ $^
 
 .PHONY:		all test benchmark clean
