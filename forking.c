@@ -21,13 +21,26 @@ int forking_server(int sfd) {
     /* Accept and handle HTTP request */
     while (true) {
     	/* Accept request */
-
+	Request *r = accept_request(sfd);
 	/* Ignore children */
-
+	
 	/* Fork off child process to handle request */
+	pid_t pid = fork();
+	if(pid<0) {
+	    debug("Failed to fork: %s\n", strerror(pid));
+	}
+	else if(pid == 0) {
+	    close(sfd);
+	    HTTPStatus = handle_request(r);
+	    exit(1);
+	}
+	else {
+	    free_request(r);
+	}
     }
 
     /* Close server socket */
+    close(sfd);
     return EXIT_SUCCESS;
 }
 
