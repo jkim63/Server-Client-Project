@@ -9,10 +9,10 @@
 #include <unistd.h>
 
 /* Global Variables */
-char *Port	      = "9898";
+char *Port            = "9898";
 char *MimeTypesPath   = "/etc/mime.types";
 char *DefaultMimeType = "text/plain";
-char *RootPath	      = "www";
+char *RootPath        = "www";
 
 /**
  * Display usage message and exit with specified status code.
@@ -44,6 +44,40 @@ void usage(const char *progname, int status) {
  * if specified.
  */
 bool parse_options(int argc, char *argv[], ServerMode *mode) {
+    int argind = 1;
+    char *m;
+    while (argind < argc && strlen(argv[argind]) > 1 && argv[argind][0] == '-') {
+        char *arg = argv[argind++];
+        switch(arg[1]) {
+            case 'h':
+                usage(argv[0], 0);
+                break;
+            case 'c':
+                m = argv[argind++];
+                if(streq(m, "Single")) *mode = 1;
+                else if (streq(m, "Forking")) *mode = 2;
+                else {
+                    *mode = 3;
+                    return false;
+                }
+                break;
+            case 'm':
+                MimeTypesPath = argv[argind++];
+                break;
+            case 'M':
+                DefaultMimeType = argv[argind++];
+                break;
+            case 'p':
+                Port = argv[argind++];
+                break;
+            case 'r':
+                RootPath = argv[argind++];
+                break;
+            default:
+                usage(argv[0], 1);
+                break;
+        }
+    }
     return true;
 }
 
@@ -54,10 +88,20 @@ int main(int argc, char *argv[]) {
     ServerMode mode = SINGLE;
 
     /* Parse command line options */
-
+    if(!parse_options(argc, argv, &mode)){
+        debug("Could not parse options");
+    }
     /* Listen to server socket */
-
+    int sfd = socket_listen(Port);
+    if(sfd < 0) {
+        debug("socket_listen fail...");
+        return EXIT_FAILURE;
+    }
     /* Determine real RootPath */
+    if(realpath(RootPath, RootPath) == NULL) {
+        debug("RootPath could not be resolved: %s", strerror(errno));
+        return EXIT_FAILURE;
+    }
 
     log("Listening on port %s", Port);
     debug("RootPath        = %s", RootPath);
@@ -66,7 +110,15 @@ int main(int argc, char *argv[]) {
     debug("ConcurrencyMode = %s", mode == SINGLE ? "Single" : "Forking");
 
     /* Start either forking or single HTTP server */
+    if(mode == SINGLE) {
+        return single_server(sfd);
+    }
+    else{
+        return forking_server(sfd);
+    }
+
     return EXIT_SUCCESS;
 }
 
 /* vim: set expandtab sts=4 sw=4 ts=8 ft=c: */
+

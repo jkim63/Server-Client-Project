@@ -16,15 +16,19 @@
 int single_server(int sfd) {
     /* Accept and handle HTTP request */
     while (true) {
-    	/* Accept request */
-
-	/* Handle request */
-
-	/* Free request */
+        /* Accept request */
+        Request *r = accept_request(sfd);
+        /* Handle request */
+        HTTPStatus status = handle_request(r);
+        debug("Request Status: %s", http_status_string(status));
+        /* Free request */
+        free_request(r);
     }
 
     /* Close server socket */
+    close(sfd);
     return EXIT_SUCCESS;
 }
 
 /* vim: set expandtab sts=4 sw=4 ts=8 ft=c: */
+
