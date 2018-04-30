@@ -28,23 +28,39 @@ int parse_request_headers(Request *r);
  * The returned request struct must be deallocated using free_request.
  **/
 Request * accept_request(int sfd) {
-    Request *r;
+    Request *r = calloc(1, sizeof(Request));
     struct sockaddr raddr;
     socklen_t rlen;
 
     /* Allocate request struct (zeroed) */
-
+   
     /* Accept a client */
+    int r.fd = accept(sfd, &raddr, &rlen);
+    if (r.fd < 0) {
+        fprintf(stderr, "Unable to accept: %s\n", strerror(errno));
+        goto fail;
+    }
 
     /* Lookup client information */
+    int client_info = getnameinfo(&addr, rlen, r.host, sizeof(r.host), r.port, sizeof(r.port), 0)
+    if (client_info != 0) {
+        fprintf(stderr, "Unable to lookup: %s\n", gai_strerror(client_info));
+        goto fail;
+    }
 
     /* Open socket stream */
+    r.file = fdopen(r.fd, "w+");
+    if (!r.fd) {
+        fprintf(stderr, "Unable to fdopen: %s\n", strerror(errno));
+        goto fail;
+    }
 
     log("Accepted request from %s:%s", r->host, r->port);
     return r;
 
 fail:
     /* Deallocate request struct */
+    free_request(r);
     return NULL;
 }
 
@@ -66,12 +82,34 @@ void free_request(Request *r) {
     }
 
     /* Close socket or fd */
+    if (!r.fd) ;
+    else fdclose(r.fd);
 
     /* Free allocated strings */
+    if (!r.method) ;
+    else free(r.method);
+
+    if (!r.uri) ;
+    else free(r.uri);
+
+    if (!r.path) ;
+    else free(r.path);
+
+    if (!r.query) ;
+    else free(r.query);
 
     /* Free headers */
+    if (!r.headers) ;
+    else {
+        while (r.header != NULL) {
+            char *temp = r.header;
+            r.header = r.header->next;
+            free(temp);
+        }
+    }
 
     /* Free request */
+    free(r); 
 }
 
 /**
@@ -159,12 +197,32 @@ fail:
  *      headers.append(header)
  **/
 int parse_request_headers(Request *r) {
+    //r.headers = calloc(1, sizeof(Header));
     struct header *curr = NULL;
     char buffer[BUFSIZ];
     char *name;
     char *value;
 
     /* Parse headers from socket */
+    while (fgets(buffer, BUFSIZ, r.file)) {
+        chomp(buffer);
+        skip_whitespace(buffer);
+        value = strchr(buffer, ':') + 1;
+        name = buffer;
+        
+        strchr(buffer, ':') = NULL;
+        if(!r.headers) {
+            curr = calloc(1, sizeof(Header));
+            r.headers=curr;
+        } 
+        else {
+            curr->next = calloc(1, sizeof(Header));
+            curr = curr->next;
+        }
+        curr->name = name;
+        curr->value = value;
+        
+    }
 
 #ifndef NDEBUG
     for (struct header *header = r->headers; header != NULL; header = header->next) {
