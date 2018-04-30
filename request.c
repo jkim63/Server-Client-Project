@@ -114,13 +114,24 @@ int parse_request_method(Request *r) {
     char *query;
 
     /* Read line from socket */
-
+    char line [BUFSIZ];
+    fgets(line, BUFSIZ, r->file);
     /* Parse method and uri */
 
+    method= strtok(line,' ');
+    uri= strtok(NULL, ' ');
+
     /* Parse query from uri */
+    query= strchr(uri, '?');
+    uri[*query]= '\0';
+    query ++;
+    query= strtok(query, ' ');
+
 
     /* Record method, uri, and query in request struct */
-
+    r->method= strdup(method);
+    r->uri= strdup(uri);
+    r->query= strdup(query);
     debug("HTTP METHOD: %s", r->method);
     debug("HTTP URI:    %s", r->uri);
     debug("HTTP QUERY:  %s", r->query);
