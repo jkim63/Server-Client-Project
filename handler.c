@@ -105,17 +105,30 @@ HTTPStatus  handle_file_request(Request *r) {
 
     /* Read from file and write to socket in chunks */
     while ((nread = fread(buffer, sizeof(char), BUFSIZ, fs)) > 0) {
+        if(nread <= 0) {
+            debug("Could not read %s: %s", r->path, strerror(errno));
+            goto fail;
+        }
         size_t fwritten = fwrite(buffer, sizeof(char), nread, r->file);
+        if(fwritten <= 0) {
+            debug("Could not write: %s", strerror(errno));
+            goto fail;
+        }
         while (fwritten != nread) {
-            
+            fwritten += fwrite(buffer, sizeof(char), nread-fwritten, r->file);
         }
     }
 
     /* Close file, flush socket, deallocate mimetype, return OK */
+    close(fs);
+    fflush(r->file);
+    free(mimetype);
     return HTTP_STATUS_OK;
 
 fail:
     /* Close file, free mimetype, return INTERNAL_SERVER_ERROR */
+    close(fs);
+    free(mimetype);
     return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 }
 
