@@ -26,20 +26,53 @@ HTTPStatus handle_error(Request *request, HTTPStatus status);
  * type, and then dispatches to the appropriate handler type.
  *
  * On error, handle_error should be used with an appropriate HTTP status code.
+ * 200 (0 i enumed HTTPSTATUS) 400 (1 in enumed HTTPSTATUS) :bad request, client error; 404: not found;  500:generic
  **/
 HTTPStatus  handle_request(Request *r) {
-    //HTTPStatus result;
-
+    HTTPStatus result =3;
+    
     /* Parse request */
-
+    if (parse_request(r) == -1){
+        result =1;
+        handle_error(r, result);
+        return result;
+    }
+    
     /* Determine request path */
+    char* path;
+    if ((path= determine_request_path(r->uri))==-1){
+        result =2;
+        handle_error(r, result);
+        return result;
+    }
     debug("HTTP REQUEST PATH: %s", r->path);
 
     /* Dispatch to appropriate request handler type based on file type */
+    
+    struct stat storeStat;
+    if (stat(path, &storeStat == -1)){
+        result= 1;
+        handle_error(r, result);
+        return result;
+    }
+    else if ((storeStat.st_mode & S_IFMT)   == S_IFREG){
 
-    //log("HTTP REQUEST STATUS: %s", http_status_string(result));
-    //return result;
-    return EXIT_SUCCESS;
+        if (access(path, X_OK )){
+            result = handle_cgi_request(r);
+        } else if (access(path, R_OK)){
+            result= handle_file_request(r);
+        } else {
+            result= handle_error(r, 1);
+        }
+    }
+    else if ((storeStat.st_mode & S_IFMT) == S_IFDIR){
+        result= handle_browse_request(r);
+    }
+    
+    log("HTTP REQUEST STATUS: %s", http_status_string(result));
+    
+    return result;
+    
 }
 
 /**
