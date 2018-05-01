@@ -120,14 +120,14 @@ HTTPStatus  handle_file_request(Request *r) {
     }
 
     /* Close file, flush socket, deallocate mimetype, return OK */
-    close(fs);
+    fclose(fs);
     fflush(r->file);
     free(mimetype);
     return HTTP_STATUS_OK;
 
 fail:
     /* Close file, free mimetype, return INTERNAL_SERVER_ERROR */
-    close(fs);
+    fclose(fs);
     free(mimetype);
     return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 }
