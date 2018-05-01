@@ -4,7 +4,7 @@ LD=		gcc
 LDFLAGS=	-L.
 AR=		ar
 ARFLAGS=	rcs
-TARGETS=	spidey forking handler request single socket utils
+TARGETS=	spidey
 
 all:		$(TARGETS)
 	
