@@ -141,8 +141,9 @@ HTTPStatus  handle_error(Request *r, HTTPStatus status) {
     const char *status_string = http_status_string(status);
 
     /* Write HTTP Header */
-
+    fprintf(r->file, "HTTP/1.1 %s\n\n", status_string);
     /* Write HTML Description of Error*/
+    fprintf(r->file, "<html><body> \"HTTP Status: %s\n\" </body></html>", status_string);
 
     /* Return specified status */
     return status;
