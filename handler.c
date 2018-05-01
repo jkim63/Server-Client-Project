@@ -204,7 +204,7 @@ HTTPStatus handle_cgi_request(Request *r) {
  * notify the user of the error.
  **/
 HTTPStatus  handle_error(Request *r, HTTPStatus status) {
-    //const char *status_string = http_status_string(status);
+    const char *status_string = http_status_string(status);
 
     /* Write HTTP Header */
     fprintf(r->file, "HTTP/1.1 %s\n\n", status_string);
