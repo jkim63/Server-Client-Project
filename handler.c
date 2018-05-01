@@ -79,25 +79,44 @@ HTTPStatus  handle_browse_request(Request *r) {
  * HTTP_STATUS_NOT_FOUND.
  **/
 HTTPStatus  handle_file_request(Request *r) {
-    /* FILE *fs;
+    FILE *fs;
     char buffer[BUFSIZ];
     char *mimetype = NULL;
-    size_t nread;*/
+    size_t nread;
 
     /* Open file for reading */
+    fs = fopen(r->path, "w+");
+    if (!fs) {
+        fprintf(stderr, "fopen failed: %s\n", strerror(errno));
+        return HTTP_STATUS_NOT_FOUND;
+    }
 
     /* Determine mimetype */
+    mimetype = determine_mimetype(r->path);
 
     /* Write HTTP Headers with OK status and determined Content-Type */
+    Header *temp = r->headers;
+    fprintf(r->file, "HTTP/1.1 200 OK\n");
+    while (temp != NULL) {
+        fprintf(r->file, "%s: %s\n", temp->name, temp->value);
+        temp = temp->next;
+    }
+    fprintf(r->file, "\n");
 
     /* Read from file and write to socket in chunks */
+    while ((nread = fread(buffer, sizeof(char), BUFSIZ, fs)) > 0) {
+        size_t fwritten = fwrite(buffer, sizeof(char), nread, r->file);
+        while (fwritten != nread) {
+            
+        }
+    }
 
     /* Close file, flush socket, deallocate mimetype, return OK */
     return HTTP_STATUS_OK;
 
-//fail:
+fail:
     /* Close file, free mimetype, return INTERNAL_SERVER_ERROR */
-    //return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+    return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 }
 
 /**
