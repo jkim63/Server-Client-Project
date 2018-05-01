@@ -40,7 +40,7 @@ HTTPStatus  handle_request(Request *r) {
     
     /* Determine request path */
     char* path;
-    if ((path= determine_request_path(r->uri))==-1){
+    if ((path= determine_request_path(r->uri))==NULL){
         result =3;
         handle_error(r, result);
         return result;
@@ -50,13 +50,12 @@ HTTPStatus  handle_request(Request *r) {
     /* Dispatch to appropriate request handler type based on file type */
     
     struct stat storeStat;
-    if (stat(path, &storeStat == -1)){
+    if ( (stat(path, &storeStat)) == -1){
         result= 2;
         handle_error(r, result);
         return result;
     }
     else if ((storeStat.st_mode & S_IFMT)   == S_IFREG){
-
         if (access(path, X_OK )){
             result = handle_cgi_request(r);
         } else if (access(path, R_OK)){
@@ -204,7 +203,7 @@ HTTPStatus handle_cgi_request(Request *r) {
  * notify the user of the error.
  **/
 HTTPStatus  handle_error(Request *r, HTTPStatus status) {
-    //const char *status_string = http_status_string(status);
+    const char *status_string = http_status_string(status);
 
     /* Write HTTP Header */
     fprintf(r->file, "HTTP/1.1 %s\n\n", status_string);
