@@ -54,10 +54,12 @@ char * determine_mimetype(const char *path) {
 
     /* Scan file for matching file extensions */
     while (fgets(buffer, BUFSIZ, fs)) {
-        token = strtok(buffer, " ");
+        mimetype = strtok(buffer, " ");
+	token = mimetype;
         token = skip_whitespace(token);
         if (streq(token, ext)) {
-            mimetype = token;
+	    *token = '\0';
+	    debug("Mimetype: %s", mimetype);
             return mimetype;
         }
     }
@@ -83,15 +85,22 @@ char * determine_mimetype(const char *path) {
  **/
 char * determine_request_path(const char *uri) {
     char* resol_path = NULL;
-    realpath(uri, resol_path);  //if error, returns NULL
+    char path[BUFSIZ] = "";
+    strcat(path, RootPath);
+    strcat(path, uri);
+    if((resol_path = realpath(path, resol_path)) == NULL) {
+	debug("Could not resolve path (%s): %s", uri, strerror(errno));
+	return NULL;
+
+    }
     size_t len = strlen(RootPath);
 
     if (strncmp(RootPath, resol_path, len) != 0){
+	free(resol_path);
         return NULL;
     }
 
-    char* result = strdup(resol_path);
-    return result;
+    return resol_path;
 }
 
 /**

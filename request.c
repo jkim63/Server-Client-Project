@@ -30,7 +30,7 @@ int parse_request_headers(Request *r);
 Request * accept_request(int sfd) {
     Request *r = calloc(1, sizeof(Request));
     struct sockaddr raddr;
-    socklen_t rlen;
+    socklen_t rlen = sizeof(struct sockaddr);
 
     /* Allocate request struct (zeroed) */
    
@@ -154,9 +154,9 @@ int parse_request(Request *r) {
  **/
 int parse_request_method(Request *r) {
     char buffer[BUFSIZ];
-    char *method;
-    char *uri;
-    char *query;
+    char *method=NULL;
+    char *uri=NULL;
+    char *query=NULL;
 
     /* Read line from socket */
     if (fgets(buffer, BUFSIZ, r->file) == NULL) {
@@ -164,19 +164,30 @@ int parse_request_method(Request *r) {
     }
 
     /* Parse method and uri */
-    method = strtok(buffer, " ");
-    uri = strtok(NULL, " ");
+    if((method = strtok(buffer, " ")) == NULL) {
+	debug("Could not parse method");
+	return -1;
+    }
+    if((uri = strtok(NULL, " ")) == NULL) {
+	debug("Could not parse uri");
+    }
+   
 
     /* Parse query from uri */
-    query= strchr(uri, '?');
-    query = '\0';
-    query ++;
-    query = strtok(query, " ");
+    if(uri != NULL) {
+	query = uri;
+	query= strtok(query, "?");
+	if(query!=NULL)
+	    *(query - 1) = '\0';
+    }
 
     /* Record method, uri, and query in request struct */
-    r->method= strdup(method);
-    r->uri= strdup(uri);
-    r->query= strdup(query);
+    if(method)
+    	r->method= strdup(method);
+    if(uri)
+	r->uri= strdup(uri);
+    if(query)
+	r->query= strdup(query);
 
     debug("HTTP METHOD: %s", r->method);
     debug("HTTP URI:    %s", r->uri);
