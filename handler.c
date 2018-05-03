@@ -98,19 +98,28 @@ HTTPStatus  handle_browse_request(Request *r) {
 	return HTTP_STATUS_NOT_FOUND;
     }
     /* Write HTTP Header with OK Status and text/html Content-Type */
-    fprintf(r->file, "HTTP/1.0 200 OK\n");
-    fprintf(r->file, "Content-Type: text/html\n\n");
+    fprintf(r->file, "HTTP/1.0 200 OK\r\n");
+    fprintf(r->file, "Content-Type: text/html\r\n\r\n");
     /* For each entry in directory, emit HTML list item */
-    fprintf(r->file, "<html><body><ul>\n");
+    fprintf(r->file, "<html><body><ul>\r\n");
     for(int i = 0; i<n; i++) {
-	fprintf(r->file, "<li>%s</li>\n", entries[i]->d_name);
+	fprintf(r->file, "<li>%s</li>\r\n", entries[i]->d_name);
 	free(entries[i]);
     }
-    fprintf(r->file, "</ul></body></html>\n");
+    fprintf(r->file, "</ul></body></html>\r\n");
+   /* fprintf(stdout, "<html><body><ul>\r\n");
+    for(int i = 0; i<n; i++) {
+	fprintf(stdout, "<li>%s</li>\r\n", entries[i]->d_name);
+	free(entries[i]);
+    }
+    fprintf(stdout, "</ul></body></html>\r\n");
+   */
     free(entries);
 
     /* Flush socket, return OK */
-    fflush(r->file);
+    if (fflush(r->file) !=0){
+        debug("Could not flush, %s", strerror(errno));
+    }
     return HTTP_STATUS_OK;
 }
 
