@@ -199,7 +199,41 @@ HTTPStatus handle_cgi_request(Request *r) {
 
     /* Export CGI environment variables from request structure:
      * http://en.wikipedia.org/wiki/Common_Gateway_Interface */
+    if (setenv("DOCUMENT_ROOT", RootPath, 1) == -1) {
+        fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+    }
     
+    if (setenv("QUERY_STRING", r->query, 1) == -1) {
+        fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+    }
+
+    if (setenv("REMOTE_ADDR", r->host, 1) == -1) {
+        fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+    }
+
+    if (setenv("REMOTE_PORT", r->port, 1) == -1) {
+        fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+    }
+
+    if (setenv("REQUEST_METHOD", r->method, 1) == -1) {
+        fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+    }
+
+    if (setenv("REQUEST_URI", r->uri, 1) == -1) {
+        fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+    }
+
+    if (setenv("SCRIPT_FILENAME", r->path, 1) == -1) {
+        fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+    }
+
+    if (setenv("SERVER_PORT", Port, 1) == -1) {
+        fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+    }
+
+    if (setenv("HTTP_HOST", , 1) == -1) {
+        fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+    }    
 
     /* Export CGI environment variables from request headers */
     Header *temp = r->headers;
