@@ -208,6 +208,8 @@ HTTPStatus handle_cgi_request(Request *r) {
 
     /* Export CGI environment variables from request structure:
      * http://en.wikipedia.org/wiki/Common_Gateway_Interface */
+    Header *head = r->headers;
+    
     if (setenv("DOCUMENT_ROOT", RootPath, 1) == -1) {
         fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
     }
@@ -240,10 +242,46 @@ HTTPStatus handle_cgi_request(Request *r) {
         fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
     }
 
-   /* if (setenv("HTTP_HOST",, 1) == -1) {
-        fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
-    }    
-*/
+    while (head != NULL) {
+        if (streq(head->name, "HTTP_HOST")) {
+            if (setenv("HTTP_HOST", head->value, 1) == -1) {
+                fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+            }
+        }
+
+        if (streq(head->name, "HTTP_ACCEPT")) {
+            if (setenv("HTTP_ACCEPT", head->value, 1) == -1) {
+                fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+            }
+        }
+
+        if (streq(head->name, "HTTP_ACCEPT_LANGUAGE")) {
+            if (setenv("HTTP_ACCEPT_LANGUAGE", head->value, 1) == -1) {
+                fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+            }
+        }
+
+        if (streq(head->name, "HTTP_ACCEPT_ENCODING")) {
+            if (setenv("HTTP_ACCEPT_ENCODING", head->value, 1) == -1) {
+                fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+            }
+        }
+
+        if (streq(head->name, "HTTP_CONNECTION")) {
+            if (setenv("HTTP_CONNECTION", head->value, 1) == -1) {
+                fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+            }
+        }
+
+        if (streq(head->name, "HTTP_USER_AGENT")) {
+            if (setenv("HTTP_USER_AGENT", head->value, 1) == -1) {
+                fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+            }
+        }
+
+        head = head->next;
+    }  
+
     /* Export CGI environment variables from request headers */
     Header *temp = r->headers;
     while(temp != NULL) {
