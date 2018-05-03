@@ -49,8 +49,8 @@ Request * accept_request(int sfd) {
     }
 
     /* Open socket stream */
-    r->file = fdopen(r->fd, "w+");
-    if (!r->fd) {
+    r->file = fdopen(r->fd, "r+");
+    if (!r->file) {
         fprintf(stderr, "Unable to fdopen: %s\n", strerror(errno));
         goto fail;
     }
@@ -236,7 +236,7 @@ int parse_request_headers(Request *r) {
     char *name;
     char *value;
 
-    /* Parse headers from socket */
+    /* Parse headers from socket */                    /*NEED TO FINISH READING STREAM*/
     if (fgets(buffer, BUFSIZ, r->file) == NULL) {
         goto fail;
     } else {

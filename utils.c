@@ -88,14 +88,13 @@ char * determine_request_path(const char *uri) {
     char path[BUFSIZ] = "";
     strcat(path, RootPath);
     strcat(path, uri);
-    if((resol_path = realpath(path, resol_path)) == NULL) {
+    if((resol_path = realpath(path, NULL)) == NULL) {
 	debug("Could not resolve path (%s): %s", uri, strerror(errno));
 	return NULL;
 
     }
-    size_t len = strlen(RootPath);
-
-    if (strncmp(RootPath, resol_path, len) != 0){
+    
+    if (strncmp(RootPath, resol_path, strlen(RootPath)) != 0){
 	free(resol_path);
         return NULL;
     }
