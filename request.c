@@ -175,10 +175,13 @@ int parse_request_method(Request *r) {
 
     /* Parse query from uri */
     if(uri != NULL) {
-	query = uri;
-	query= strtok(query, "?");
-	if(query!=NULL)
-	    *(query - 1) = '\0';
+	//query = uri;
+	query= strtok(uri, "?");
+	if(query!=NULL){
+            debug("query my check: %s", query);
+            query = strtok(NULL," \n\r");
+	   // *(query - 1) = '\0';
+        }
     }
 
     /* Record method, uri, and query in request struct */
