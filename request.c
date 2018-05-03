@@ -50,7 +50,7 @@ Request * accept_request(int sfd) {
 
     /* Open socket stream */
     r->file = fdopen(r->fd, "w+");
-    if (!r->fd) {
+    if (!r->file) {
         fprintf(stderr, "Unable to fdopen: %s\n", strerror(errno));
         goto fail;
     }
@@ -162,6 +162,7 @@ int parse_request_method(Request *r) {
     if (fgets(buffer, BUFSIZ, r->file) == NULL) {
         goto fail;
     }
+    debug("REQUEST: %s", buffer);
 
     /* Parse method and uri */
     if((method = strtok(buffer, " ")) == NULL) {
@@ -171,14 +172,19 @@ int parse_request_method(Request *r) {
     if((uri = strtok(NULL, " ")) == NULL) {
 	debug("Could not parse uri");
     }
-   
 
     /* Parse query from uri */
     if(uri != NULL) {
-	query = uri;
-	query= strtok(query, "?");
-	if(query!=NULL)
-	    *(query - 1) = '\0';
+	query= strchr(uri, '?');
+	if(query != NULL) {
+	    query++;
+	    char* t =( strchr(uri, '?') );
+	    *t='\0';
+	    if(streq(uri, query)) {
+	    	debug("Q(%s)==U(%s)", query, uri);
+	    	query = NULL;
+	    }
+	}
     }
 
     /* Record method, uri, and query in request struct */
@@ -252,8 +258,8 @@ int parse_request_headers(Request *r) {
             curr->next = calloc(1, sizeof(Header));
             curr = curr->next;
         }
-        curr->name = name;
-        curr->value = value;
+        curr->name = strdup(name);
+        curr->value = strdup(value);
         
     }
 

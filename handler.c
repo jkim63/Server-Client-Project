@@ -54,9 +54,9 @@ HTTPStatus  handle_request(Request *r) {
         return result;
     }
     else if ((storeStat.st_mode & S_IFMT)   == S_IFREG){
-        if (access(r->path, X_OK )){
+        if (access(r->path, X_OK ) == 0){
             result = handle_cgi_request(r);
-        } else if (access(r->path, R_OK)){
+        } else if (access(r->path, R_OK) == 0){
             result= handle_file_request(r);
         } else {
             result= handle_error(r, HTTP_STATUS_NOT_FOUND);
@@ -97,6 +97,7 @@ HTTPStatus  handle_browse_request(Request *r) {
 	debug("Could not scan (%s): %s", r->path, strerror(errno)); 
 	return HTTP_STATUS_NOT_FOUND;
     }
+    debug("Read %d files", n);
     /* Write HTTP Header with OK Status and text/html Content-Type */
     fprintf(r->file, "HTTP/1.0 200 OK\n");
     fprintf(r->file, "Content-Type: text/html\n\n");
@@ -203,7 +204,8 @@ HTTPStatus handle_cgi_request(Request *r) {
 
     /* Export CGI environment variables from request headers */
     Header *temp = r->headers;
-    while(temp != NULL) {
+    while(temp != NULL && temp->name != NULL && temp->value!= NULL) {
+	debug("Name: %s, Value %s", temp->name, temp->value);
 	setenv(temp->name, temp->value, 1);
 	temp = temp->next;
     }
