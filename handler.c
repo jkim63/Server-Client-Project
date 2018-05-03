@@ -28,18 +28,48 @@ HTTPStatus handle_error(Request *request, HTTPStatus status);
  * On error, handle_error should be used with an appropriate HTTP status code.
  **/
 HTTPStatus  handle_request(Request *r) {
-    //HTTPStatus result;
+    HTTPStatus result = 0;
 
     /* Parse request */
+    if (parse_request(r) == -1) {
+        result = HTTP_STATUS_BAD_REQUEST;
+        handle_error(r, result);
+        return result;
+    }
 
     /* Determine request path */
+    if ((r->path = determine_request_path(r->uri)) == NULL) {
+        result = HTTP_STATUS_NOT_FOUND;
+        handle_error(r, result);
+        return result;
+    }
     debug("HTTP REQUEST PATH: %s", r->path);
 
     /* Dispatch to appropriate request handler type based on file type */
+    struct stat storeStat;
+    if ((stat(r->path, &storeStat)) == -1) {
+        result = HTTP_STATUS_INTERNAL_SERVER_ERROR;
+        handle_error(r, result);
+        return result;
+    } else if ((storeStat.st_mode & S_IFMT) == S_IFREG) {
+        if (access(r->path, X_OK)) {
+            result = handle_cgi_request(r);
+        } else if (access(r->path, R_OK)) {
+            result = handle_file_request(r);
+        } else {
+            result = handle_error(r, HTTP_STATUS_NOT_FOUND);
+            return result;
+        }
+    } else if ((storeStat.st_mode & S_IFMT) == S_IFDIR) {
+        result = handle_browse_request(r);
+    }
 
-    //log("HTTP REQUEST STATUS: %s", http_status_string(result));
-    //return result;
-    return EXIT_SUCCESS;
+    if (result != HTTP_STATUS_OK) {
+        handle_error(r, result);
+    }
+
+    log("HTTP REQUEST STATUS: %s", http_status_string(result));
+    return result;
 }
 
 /**
@@ -54,16 +84,40 @@ HTTPStatus  handle_request(Request *r) {
  * with HTTP_STATUS_NOT_FOUND.
  **/
 HTTPStatus  handle_browse_request(Request *r) {
-    //struct dirent **entries;
-    //int n;
+    log(" handle_browse_request");
+    struct dirent **entries = NULL;
+    int n = 0;
 
     /* Open a directory for reading or scanning */
+    if( (n = scandir(r->path, &entries, NULL, alphasort)) < 0) {
+        debug("Could not scan (%s): %s", r->path, strerror(errno)); 
+        return HTTP_STATUS_NOT_FOUND;
+    }
+
+
+    
+    //if (streq(entries->d_name, ".")) continue;
+    entries += 1;
+    n -= 1;
 
     /* Write HTTP Header with OK Status and text/html Content-Type */
-
+    fprintf(r->file, "HTTP/1.0 200 OK\r\n");
+    fprintf(r->file, "Content-Type: text/html\r\n");
+    fprintf(r->file, "\r\n");
+    
     /* For each entry in directory, emit HTML list item */
+    fprintf(r->file, "<html><body><ul>\r\n");
+    for(int i = 0; i<n; i++) {
+        fprintf(r->file, "<li>%s</li>\r\n", entries[i]->d_name);
+        free(entries[i]);
+    }
+    fprintf(r->file, "</ul></body></html>\r\n");
+    free(entries);
 
     /* Flush socket, return OK */
+    if (fflush(r->file) != 0){
+        debug("Could not flush, %s", strerror(errno));
+    }
     return HTTP_STATUS_OK;
 }
 
@@ -79,25 +133,62 @@ HTTPStatus  handle_browse_request(Request *r) {
  * HTTP_STATUS_NOT_FOUND.
  **/
 HTTPStatus  handle_file_request(Request *r) {
-    /* FILE *fs;
+    log("handle_file_request");
+    FILE *fs;
     char buffer[BUFSIZ];
     char *mimetype = NULL;
-    size_t nread;*/
+    size_t nread;
 
     /* Open file for reading */
+    fs = fopen(r->path, "w+");
+    if (!fs) {
+        fprintf(stderr, "fopen failed: %s\n", strerror(errno));
+        return HTTP_STATUS_NOT_FOUND;
+    }
 
     /* Determine mimetype */
+    mimetype = determine_mimetype(r->path);
+    debug("Mimetype: %s", mimetype);
 
     /* Write HTTP Headers with OK status and determined Content-Type */
+    Header *temp = r->headers;
+    fprintf(r->file, "HTTP/1.1 200 OK\r\n");
+    fprintf(r->file, "Content-Type: %s\r\n", mimetype);
+    fprintf(r->file, "\r\n");
+
+    while (temp != NULL) {
+        fprintf(r->file, "%s: %s\n", temp->name, temp->value);
+        temp = temp->next;
+    }
+    fprintf(r->file, "\r\n");
 
     /* Read from file and write to socket in chunks */
+    while ((nread = fread(buffer, sizeof(char), BUFSIZ, fs)) > 0) {
+        if (nread <= 0) {
+            debug("Could not read %s: %s", r->path, strerror(errno));
+            goto fail;
+        }
+        size_t fwritten = fwrite(buffer, sizeof(char), nread, r->file);
+        if (fwritten <= 0) {
+            debug("Could not write: %s", strerror(errno));
+          goto fail;  
+        }
+        while (fwritten != nread) {
+            fwritten += fwrite(buffer, sizeof(char), nread - fwritten, r->file);
+        }
+    }
 
     /* Close file, flush socket, deallocate mimetype, return OK */
+    fclose(fs);
+    fflush(r->file);
+    free(mimetype);
     return HTTP_STATUS_OK;
 
-//fail:
+fail:
     /* Close file, free mimetype, return INTERNAL_SERVER_ERROR */
-    //return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+    fclose(fs);
+    free(mimetype);
+    return HTTP_STATUS_INTERNAL_SERVER_ERROR;
 }
 
 /**
@@ -113,19 +204,109 @@ HTTPStatus  handle_file_request(Request *r) {
  * HTTP_STATUS_INTERNAL_SERVER_ERROR.
  **/
 HTTPStatus handle_cgi_request(Request *r) {
-    //FILE *pfs;
-    //char buffer[BUFSIZ];
+    FILE *pfs;
+    char buffer[BUFSIZ];
 
     /* Export CGI environment variables from request structure:
      * http://en.wikipedia.org/wiki/Common_Gateway_Interface */
+    Header *head = r->headers;
+
+    if (setenv("DOCUMENT_ROOT", RootPath, 1) == -1) {
+        fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+    }
+    
+    if (!r->query) ;
+    if (setenv("QUERY_STRING", r->query, 1) == -1) {
+        fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+    }
+
+    if (setenv("REMOTE_ADDR", r->host, 1) == -1) {
+        fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+    }
+
+    if (setenv("REMOTE_PORT", r->port, 1) == -1) {
+        fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+    }
+
+    if (setenv("REQUEST_METHOD", r->method, 1) == -1) {
+        fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+    }
+
+    if (setenv("REQUEST_URI", r->uri, 1) == -1) {
+        fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+    }
+
+    if (setenv("SCRIPT_FILENAME", r->path, 1) == -1) {
+        fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+    }
+
+    if (setenv("SERVER_PORT", Port, 1) == -1) {
+        fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+    }
+
+    while (head != NULL) {
+        if (streq(head->name, "HTTP_HOST")) {
+            if (setenv("HTTP_HOST", head->value, 1) == -1) {
+                fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+            }
+        }
+
+        if (streq(head->name, "HTTP_ACCEPT")) {
+            if (setenv("HTTP_ACCEPT", head->value, 1) == -1) {
+                fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+            }
+        }
+
+        if (streq(head->name, "HTTP_ACCEPT_LANGUAGE")) {
+            if (setenv("HTTP_ACCEPT_LANGUAGE", head->value, 1) == -1) {
+                fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+            }
+        }
+
+        if (streq(head->name, "HTTP_ACCEPT_ENCODING")) {
+            if (setenv("HTTP_ACCEPT_ENCODING", head->value, 1) == -1) {
+                fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+            }
+        }
+
+        if (streq(head->name, "HTTP_CONNECTION")) {
+            if (setenv("HTTP_CONNECTION", head->value, 1) == -1) {
+                fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+            }
+        }
+
+        if (streq(head->name, "HTTP_USER_AGENT")) {
+            if (setenv("HTTP_USER_AGENT", head->value, 1) == -1) {
+                fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
+            }
+        }
+
+        head = head->next;
+    }   
 
     /* Export CGI environment variables from request headers */
+    Header *temp = r->headers;
+    while (temp != NULL) {
+        setenv(temp->name, temp->value, 1);
+        temp = temp->next;
+    }
 
     /* POpen CGI Script */
+    pfs = popen(r->path, "r");
+    if (!pfs) {
+        fprintf(stderr, "Unable to popen: %s\n", strerror(errno));
+        //fclose(r->path);
+        return HTTP_STATUS_INTERNAL_SERVER_ERROR;
+    }
 
     /* Copy data from popen to socket */
+    while (fgets(buffer, BUFSIZ, pfs)) {
+        fputs(buffer, r->file);
+    }
 
     /* Close popen, flush socket, return OK */
+    pclose(pfs);
+    fflush(r->file);
     return HTTP_STATUS_OK;
 }
 
@@ -139,14 +320,20 @@ HTTPStatus handle_cgi_request(Request *r) {
  * notify the user of the error.
  **/
 HTTPStatus  handle_error(Request *r, HTTPStatus status) {
-    //const char *status_string = http_status_string(status);
+    log("handle_error");
+    const char *status_string = http_status_string(status);
 
     /* Write HTTP Header */
+    fprintf(r->file, "HTTP/1.0 %si\r\n", status_string);
+    fprintf(r->file, "Content-type: text/html\r\n");
+    fprintf(r->file, "\r\n");
 
     /* Write HTML Description of Error*/
+    fprintf(r->file, "<html><body> \"HTTP Status: %s\n\" </body></html>\r\n", status_string);
 
     /* Return specified status */
     return status;
 }
 
 /* vim: set expandtab sts=4 sw=4 ts=8 ft=c: */
+

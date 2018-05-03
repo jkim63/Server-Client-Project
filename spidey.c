@@ -54,10 +54,10 @@ bool parse_options(int argc, char *argv[], ServerMode *mode) {
                 break;
             case 'c':
                 m = argv[argind++];
-                if(streq(m, "Single")) *mode = 1;
-                else if (streq(m, "Forking")) *mode = 2;
+                if(streq(m, "single")) *mode = 0;
+                else if (streq(m, "forking")) *mode = 1;
                 else {
-                    *mode = 3;
+                    *mode = 2;
                     return false;
                 }
                 break;
@@ -97,8 +97,9 @@ int main(int argc, char *argv[]) {
         debug("socket_listen fail...");
         return EXIT_FAILURE;
     }
+
     /* Determine real RootPath */
-    if(realpath(RootPath, RootPath) == NULL) {
+    if((RootPath = realpath(RootPath, NULL)) == NULL) {
         debug("RootPath could not be resolved: %s", strerror(errno));
         return EXIT_FAILURE;
     }

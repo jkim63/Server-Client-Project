@@ -4,15 +4,14 @@ LD=		gcc
 LDFLAGS=	-L.
 AR=		ar
 ARFLAGS=	rcs
-TARGETS=	spidey forking handler request single socket utils
+TARGETS=	spidey
 
 all:		$(TARGETS)
 	
 test:
 	@$(MAKE) -sk test-all
 
-test-all:
-	test-spidey
+test-all: test-spidey
 
 test-spidey:	spidey
 	curl -sLO https://gitlab.com/nd-cse-20289-sp18/cse-20289-sp18-project/raw/master/test_spidey.sh

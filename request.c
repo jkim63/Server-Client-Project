@@ -30,7 +30,7 @@ int parse_request_headers(Request *r);
 Request * accept_request(int sfd) {
     Request *r = calloc(1, sizeof(Request));
     struct sockaddr raddr;
-    socklen_t rlen;
+    socklen_t rlen = sizeof(struct sockaddr);
 
     /* Allocate request struct (zeroed) */
    
@@ -49,7 +49,7 @@ Request * accept_request(int sfd) {
     }
 
     /* Open socket stream */
-    r->file = fdopen(r->fd, "w+");
+    r->file = fdopen(r->fd, "r+");
     if (!r->fd) {
         fprintf(stderr, "Unable to fdopen: %s\n", strerror(errno));
         goto fail;
@@ -154,9 +154,9 @@ int parse_request(Request *r) {
  **/
 int parse_request_method(Request *r) {
     char buffer[BUFSIZ];
-    char *method;
-    char *uri;
-    char *query;
+    char *method = NULL;
+    char *uri = NULL;
+    char *query = NULL;
 
     /* Read line from socket */
     if (fgets(buffer, BUFSIZ, r->file) == NULL) {
@@ -164,19 +164,28 @@ int parse_request_method(Request *r) {
     }
 
     /* Parse method and uri */
-    method = strtok(buffer, " ");
-    uri = strtok(NULL, " ");
+    if ((method = strtok(buffer, " ")) == NULL) {
+        debug("Could not parse method: %s", strerror(errno));
+        goto fail;   
+    }
+    if ((uri = strtok(NULL, " ")) == NULL) {
+        debug("Could not parse uri: %s", strerror(errno)); 
+        goto fail;  
+    }
 
     /* Parse query from uri */
-    query= strchr(uri, '?');
-    query = '\0';
-    query ++;
-    query = strtok(query, " ");
+    if (uri != NULL) {
+        //query = uri;
+        query = strtok(query, "?");
+        if (query != NULL) {
+            query = strtok(NULL, " \n\r");
+        }
+    }
 
     /* Record method, uri, and query in request struct */
-    r->method= strdup(method);
-    r->uri= strdup(uri);
-    r->query= strdup(query);
+    if (method) r->method = strdup(method);
+    if (uri)    r->uri    = strdup(uri);
+    if (query)  r->query  = strdup(query);
 
     debug("HTTP METHOD: %s", r->method);
     debug("HTTP URI:    %s", r->uri);
@@ -216,16 +225,14 @@ fail:
  *      headers.append(header)
  **/
 int parse_request_headers(Request *r) {
-    //r.headers = calloc(1, sizeof(Header));
     struct header *curr = NULL;
     char buffer[BUFSIZ];
     char *name;
     char *value;
 
     /* Parse headers from socket */
-    if (fgets(buffer, BUFSIZ, r->file) == NULL) {
-        goto fail;
-    } else {
+
+    while (fgets(buffer, BUFSIZ, r->file) && (strlen(buffer) > 2)) {
         chomp(buffer);
         skip_whitespace(buffer);
         value = strchr(buffer, ':');
@@ -233,7 +240,12 @@ int parse_request_headers(Request *r) {
         value++;
         name = buffer;
         
-        if(!r->headers) {
+        curr = calloc(1, sizeof(Header)); 
+
+        curr->name = name;
+        curr->value = value;
+        curr = curr->next;
+        /*if(!r->headers) {
             curr = calloc(1, sizeof(Header));
             r->headers=curr;
         } 
@@ -242,8 +254,7 @@ int parse_request_headers(Request *r) {
             curr = curr->next;
         }
         curr->name = name;
-        curr->value = value;
-        
+        curr->value = value;    */   
     }
 
 #ifndef NDEBUG
@@ -253,8 +264,8 @@ int parse_request_headers(Request *r) {
 #endif
     return 0;
 
-fail:
-    return -1;
+/*fail:
+    return -1;*/
 }
 
 /* vim: set expandtab sts=4 sw=4 ts=8 ft=c: */
