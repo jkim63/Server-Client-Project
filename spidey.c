@@ -92,6 +92,11 @@ int main(int argc, char *argv[]) {
         debug("Could not parse options");
     }
     /* Listen to server socket */
+    int sfd = socket_listen(Port);
+    if(sfd < 0) {
+        debug("socket_listen fail...");
+        return EXIT_FAILURE;
+    }
 
     int sfd = socket_listen(Port);
     if(sfd < 0) {
@@ -122,3 +127,4 @@ int main(int argc, char *argv[]) {
 }
 
 /* vim: set expandtab sts=4 sw=4 ts=8 ft=c: */
+

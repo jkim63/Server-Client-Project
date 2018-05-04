@@ -38,6 +38,8 @@ char * determine_mimetype(const char *path) {
     char buffer[BUFSIZ];
     FILE *fs = NULL;
 
+    if(!path) return strdup(DefaultMimeType);
+
     /* Find file extension */
     if (strrchr(path, '.') == NULL) {
         return DefaultMimeType;

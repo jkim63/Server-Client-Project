@@ -230,7 +230,6 @@ fail:
  *      headers.append(header)
  **/
 int parse_request_headers(Request *r) {
-    //r.headers = calloc(1, sizeof(Header));
     struct header *curr = NULL;
     char buffer[BUFSIZ];
     char *name;
@@ -241,23 +240,22 @@ int parse_request_headers(Request *r) {
         goto fail;
     } else {
         chomp(buffer);
-        skip_whitespace(buffer);
-        value = strchr(buffer, ':');
+        name = skip_whitespace(buffer);
+        value = strchr(name, ':');
+        if (value == NULL) {
+            goto fail;
+        }
         *value = '\0';
         value++;
-        name = buffer;
+        value = skip_whitespace(value);
         
-        if(!r->headers) {
-            curr = calloc(1, sizeof(Header));
-            r->headers=curr;
-        } 
-        else {
-            curr->next = calloc(1, sizeof(Header));
-            curr = curr->next;
-        }
-        curr->name = name;
-        curr->value = value;
-        
+        curr = calloc(1, sizeof(struct header)); 
+
+        curr->name = strdup(name);
+        curr->value = strdup(value);
+        curr->next = r->headers;
+
+        r->headers = curr;
     }
 
 #ifndef NDEBUG
