@@ -38,6 +38,8 @@ char * determine_mimetype(const char *path) {
     char buffer[BUFSIZ];
     FILE *fs = NULL;
 
+    if(!path) return strdup(DefaultMimeType);
+
     /* Find file extension */
     if (strrchr(path, '.') == NULL) {
         return DefaultMimeType;
@@ -55,15 +57,18 @@ char * determine_mimetype(const char *path) {
     /* Scan file for matching file extensions */
     while (fgets(buffer, BUFSIZ, fs)) {
         mimetype = strtok(skip_whitespace(buffer), WHITESPACE);
-
+        if (!mimetype) 
+            continue;
+        token = strtok(NULL, WHITESPACE);
         while (token != NULL) {
+            if (streq(token, ext)) {
+                debug("Mimetype: %s", mimetype);
+                return strdup(mimetype);
+            }
             token = strtok(NULL, WHITESPACE);
+
         }
 
-        if (streq(token, ext)) {
-            debug("Mimetype: %s", mimetype);
-            return strdup(mimetype);
-        }
     }
 
     return strdup(DefaultMimeType);
