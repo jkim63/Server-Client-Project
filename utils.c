@@ -46,9 +46,10 @@ char * determine_mimetype(const char *path) {
     } else {
         ext = strrchr(path, '.') + 1;
     }
+    debug("Extension %s", ext);
 
     /* Open MimeTypesPath file */
-    fs = fopen(path, "r");
+    fs = fopen(MimeTypesPath, "r");
     if (!fs) {
         fprintf(stderr, "Unable to fopen: %s\n", strerror(errno));
         fclose(fs);
