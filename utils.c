@@ -46,7 +46,7 @@ char * determine_mimetype(const char *path) {
     }
 
     /* Open MimeTypesPath file */
-    fs = fopen(path, "w+");
+    fs = fopen(path, "r");
     if (!fs) {
         fprintf(stderr, "Unable to fopen: %s\n", strerror(errno));
         fclose(fs);
@@ -54,17 +54,19 @@ char * determine_mimetype(const char *path) {
 
     /* Scan file for matching file extensions */
     while (fgets(buffer, BUFSIZ, fs)) {
-        mimetype = strtok(buffer, " ");
-        token = mimetype;
-        token = skip_whitespace(token);
+        mimetype = strtok(skip_whitespace(buffer), WHITESPACE);
+
+        while (token != NULL) {
+            token = strtok(NULL, WHITESPACE);
+        }
+
         if (streq(token, ext)) {
-            *token = '\0';
             debug("Mimetype: %s", mimetype);
-            return mimetype;
+            return strdup(mimetype);
         }
     }
 
-    return DefaultMimeType;
+    return strdup(DefaultMimeType);
 }
 
 /**
