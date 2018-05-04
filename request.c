@@ -50,7 +50,7 @@ Request * accept_request(int sfd) {
 
     /* Open socket stream */
     r->file = fdopen(r->fd, "r+");
-    if (!r->fd) {
+    if (!r->file) {
         fprintf(stderr, "Unable to fdopen: %s\n", strerror(errno));
         goto fail;
     }
@@ -154,9 +154,9 @@ int parse_request(Request *r) {
  **/
 int parse_request_method(Request *r) {
     char buffer[BUFSIZ];
-    char *method = NULL;
-    char *uri = NULL;
-    char *query = NULL;
+    char *method=NULL;
+    char *uri=NULL;
+    char *query=NULL;
 
     /* Read line from socket */
     if (fgets(buffer, BUFSIZ, r->file) == NULL) {
@@ -164,28 +164,33 @@ int parse_request_method(Request *r) {
     }
 
     /* Parse method and uri */
-    if ((method = strtok(buffer, " ")) == NULL) {
-        debug("Could not parse method: %s", strerror(errno));
-        goto fail;   
+    if((method = strtok(buffer, " ")) == NULL) {
+	debug("Could not parse method");
+	return -1;
     }
-    if ((uri = strtok(NULL, " ")) == NULL) {
-        debug("Could not parse uri: %s", strerror(errno)); 
-        goto fail;  
+    if((uri = strtok(NULL, " ")) == NULL) {
+	debug("Could not parse uri");
     }
+   
 
     /* Parse query from uri */
-    if (uri != NULL) {
-        //query = uri;
-        query = strtok(query, "?");
-        if (query != NULL) {
-            query = strtok(NULL, " \n\r");
+    if(uri != NULL) {
+	//query = uri;
+	query= strtok(uri, "?");
+	if(query!=NULL){
+            debug("query my check: %s", query);
+            query = strtok(NULL," \n\r");
+	   // *(query - 1) = '\0';
         }
     }
 
     /* Record method, uri, and query in request struct */
-    if (method) r->method = strdup(method);
-    if (uri)    r->uri    = strdup(uri);
-    if (query)  r->query  = strdup(query);
+    if(method)
+    	r->method= strdup(method);
+    if(uri)
+	r->uri= strdup(uri);
+    if(query)
+	r->query= strdup(query);
 
     debug("HTTP METHOD: %s", r->method);
     debug("HTTP URI:    %s", r->uri);
@@ -230,9 +235,10 @@ int parse_request_headers(Request *r) {
     char *name;
     char *value;
 
-    /* Parse headers from socket */
-
-    while (fgets(buffer, BUFSIZ, r->file) && (strlen(buffer) > 2)) {
+    /* Parse headers from socket */                    /*NEED TO FINISH READING STREAM*/
+    if (fgets(buffer, BUFSIZ, r->file) == NULL) {
+        goto fail;
+    } else {
         chomp(buffer);
         name = skip_whitespace(buffer);
         value = strchr(name, ':');

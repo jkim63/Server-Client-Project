@@ -48,7 +48,7 @@ char * determine_mimetype(const char *path) {
     }
 
     /* Open MimeTypesPath file */
-    fs = fopen(path, "r");
+    fs = fopen(path, "w+");
     if (!fs) {
         fprintf(stderr, "Unable to fopen: %s\n", strerror(errno));
         fclose(fs);
@@ -56,22 +56,17 @@ char * determine_mimetype(const char *path) {
 
     /* Scan file for matching file extensions */
     while (fgets(buffer, BUFSIZ, fs)) {
-        mimetype = strtok(skip_whitespace(buffer), WHITESPACE);
-        if (!mimetype) 
-            continue;
-        token = strtok(NULL, WHITESPACE);
-        while (token != NULL) {
-            if (streq(token, ext)) {
-                debug("Mimetype: %s", mimetype);
-                return strdup(mimetype);
-            }
-            token = strtok(NULL, WHITESPACE);
-
+        mimetype = strtok(buffer, " ");
+	token = mimetype;
+        token = skip_whitespace(token);
+        if (streq(token, ext)) {
+	    *token = '\0';
+	    debug("Mimetype: %s", mimetype);
+            return mimetype;
         }
-
     }
 
-    return strdup(DefaultMimeType);
+    return DefaultMimeType;
 }
 
 /**
@@ -95,15 +90,14 @@ char * determine_request_path(const char *uri) {
     char path[BUFSIZ] = "";
     strcat(path, RootPath);
     strcat(path, uri);
-    if ((resol_path = realpath(path, resol_path)) == NULL) {
-        debug("Could not resolve path (%s): %s", uri, strerror(errno));
-        return NULL;
+    if((resol_path = realpath(path, NULL)) == NULL) {
+	debug("Could not resolve path (%s): %s", uri, strerror(errno));
+	return NULL;
+
     }
     
-    //size_t len = strlen(RootPath);
-
     if (strncmp(RootPath, resol_path, strlen(RootPath)) != 0){
-        free(resol_path);
+	free(resol_path);
         return NULL;
     }
 
