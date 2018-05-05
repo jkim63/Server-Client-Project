@@ -249,34 +249,24 @@ HTTPStatus handle_cgi_request(Request *r) {
             }
         }
 
-        if (streq(head->name, "HTTP_ACCEPT")) {
-            if (setenv("HTTP_ACCEPT", head->value, 1) == -1) {
-                fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
-            }
+        else if (streq(head->name, "Accept")) {
+            setenv("HTTP_ACCEPT", head->value, 1);
         }
 
-        if (streq(head->name, "HTTP_ACCEPT_LANGUAGE")) {
-            if (setenv("HTTP_ACCEPT_LANGUAGE", head->value, 1) == -1) {
-                fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
-            }
+        else if (streq(head->name, "Accept-Language")) {
+            setenv("HTTP_ACCEPT_LANGUAGE", head->value, 1); 
         }
 
-        if (streq(head->name, "HTTP_ACCEPT_ENCODING")) {
-            if (setenv("HTTP_ACCEPT_ENCODING", head->value, 1) == -1) {
-                fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
-            }
+        else if (streq(head->name, "Accept-Encoding")) {
+            setenv("HTTP_ACCEPT_ENCODING", head->value, 1);
         }
 
-        if (streq(head->name, "HTTP_CONNECTION")) {
-            if (setenv("HTTP_CONNECTION", head->value, 1) == -1) {
-                fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
-            }
+        else if (streq(head->name, "Connection")) {
+            setenv("HTTP_CONNECTION", head->value, 1);
         }
 
-        if (streq(head->name, "HTTP_USER_AGENT")) {
-            if (setenv("HTTP_USER_AGENT", head->value, 1) == -1) {
-                fprintf(stderr, "Unable to setenv: %s\n", strerror(errno));
-            }
+        else if (streq(head->name, "User-Agent")) {
+            setenv("HTTP_USER_AGENT", head->value, 1);
         }
 
         head = head->next;
@@ -318,8 +308,10 @@ HTTPStatus  handle_error(Request *r, HTTPStatus status) {
     const char *status_string = http_status_string(status);
 
     /* Write HTTP Header */
-    fprintf(r->file, "HTTP/1.0 %s\n", status_string);
-    fprintf(r->file, "Content-type: text/html\n\n");
+    fprintf(r->file, "HTTP/1.0 %s\r\n", status_string);
+    fprintf(r->file, "Content-type: text/html\r\n");
+    fprintf(r->file, "\r\n");
+
     /* Write HTML Description of Error*/
     fprintf(r->file, "<html><body> \"HTTP Status: %s\n\" </body></html>", status_string);
 
