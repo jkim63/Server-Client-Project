@@ -1,5 +1,6 @@
 Project - README
 ================
+Note: our final version is on branch lookme because we messed up master
 
 Members
 -------
