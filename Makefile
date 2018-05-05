@@ -11,7 +11,12 @@ all:		$(TARGETS)
 test:
 	@$(MAKE) -sk test-all
 
-test-all: test-spidey
+test-all: test-thor test-spidey
+
+test-thor:
+	curl -sLO https://gitlab.com/nd-cse-20289-sp18/cse-20289-sp18-project/raw/master/test_thor.sh 
+	chmod +x test_thor.sh
+	./test_thor.sh
 
 test-spidey:	spidey
 	curl -sLO https://gitlab.com/nd-cse-20289-sp18/cse-20289-sp18-project/raw/master/test_spidey.sh

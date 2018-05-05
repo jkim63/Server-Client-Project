@@ -104,10 +104,17 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
     /* Determine real RootPath */
+<<<<<<< HEAD
     if( (RootPath = realpath(RootPath, NULL)) == NULL) {
+=======
+    
+    char buffer[BUFSIZ];
+    if((RootPath = (realpath(RootPath, buffer))) == NULL) {
+>>>>>>> f6b54b2f8b03a6eb8e046dc1e07eaf3fdf1d93e5
         debug("RootPath could not be resolved: %s", strerror(errno));
         return EXIT_FAILURE;
     }
+    
 
     log("Listening on port %s", Port);
     debug("RootPath        = %s", RootPath);
