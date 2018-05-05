@@ -11,22 +11,22 @@ int parse_request_method(Request *r);
 int parse_request_headers(Request *r);
 
 /**
- * Accept request from server socket.
- *
- * @param   sfd         Server socket file descriptor.
- * @return  Newly allocated Request structure.
- *
- * This function does the following:
- *
- *  1. Allocates a request struct initialized to 0.
- *  2. Initializes the headers list in the request struct.
- *  3. Accepts a client connection from the server socket.
- *  4. Looks up the client information and stores it in the request struct.
- *  5. Opens the client socket stream for the request struct.
- *  6. Returns the request struct.
- *
- * The returned request struct must be deallocated using free_request.
- **/
+ *  * Accept request from server socket.
+ *   *
+ *    * @param   sfd         Server socket file descriptor.
+ *     * @return  Newly allocated Request structure.
+ *      *
+ *       * This function does the following:
+ *        *
+ *         *  1. Allocates a request struct initialized to 0.
+ *          *  2. Initializes the headers list in the request struct.
+ *           *  3. Accepts a client connection from the server socket.
+ *            *  4. Looks up the client information and stores it in the request struct.
+ *             *  5. Opens the client socket stream for the request struct.
+ *              *  6. Returns the request struct.
+ *               *
+ *                * The returned request struct must be deallocated using free_request.
+ *                 **/
 Request * accept_request(int sfd) {
     Request *r = calloc(1, sizeof(Request));
     struct sockaddr raddr;
@@ -50,7 +50,7 @@ Request * accept_request(int sfd) {
 
     /* Open socket stream */
     r->file = fdopen(r->fd, "r+");
-    if (!r->file) {
+    if (!r->fd) {
         fprintf(stderr, "Unable to fdopen: %s\n", strerror(errno));
         goto fail;
     }
@@ -65,20 +65,20 @@ fail:
 }
 
 /**
- * Deallocate request struct.
- *
- * @param   r           Request structure.
- *
- * This function does the following:
- *
- *  1. Closes the request socket stream or file descriptor.
- *  2. Frees all allocated strings in request struct.
- *  3. Frees all of the headers (including any allocated fields).
- *  4. Frees request struct.
- **/
+ *  * Deallocate request struct.
+ *   *
+ *    * @param   r           Request structure.
+ *     *
+ *      * This function does the following:
+ *       *
+ *        *  1. Closes the request socket stream or file descriptor.
+ *         *  2. Frees all allocated strings in request struct.
+ *          *  3. Frees all of the headers (including any allocated fields).
+ *           *  4. Frees request struct.
+ *            **/
 void free_request(Request *r) {
     if (!r) {
-    	return;
+        return;
     }
 
     /* Close socket or fd */
@@ -113,14 +113,14 @@ void free_request(Request *r) {
 }
 
 /**
- * Parse HTTP Request.
- *
- * @param   r           Request structure.
- * @return  -1 on error and 0 on success.
- *
- * This function first parses the request method, any query, and then the
- * headers, returning 0 on success, and -1 on error.
- **/
+ *  * Parse HTTP Request.
+ *   *
+ *    * @param   r           Request structure.
+ *     * @return  -1 on error and 0 on success.
+ *      *
+ *       * This function first parses the request method, any query, and then the
+ *        * headers, returning 0 on success, and -1 on error.
+ *         **/
 int parse_request(Request *r) {
     /* Parse HTTP Request Method */
     if (parse_request_method(r) == -1) {
@@ -136,27 +136,27 @@ int parse_request(Request *r) {
 }
 
 /**
- * Parse HTTP Request Method and URI.
- *
- * @param   r           Request structure.
- * @return  -1 on error and 0 on success.
- *
- * HTTP Requests come in the form
- *
- *  <METHOD> <URI>[QUERY] HTTP/<VERSION>
- *
- * Examples:
- *
- *  GET / HTTP/1.1
- *  GET /cgi.script?q=foo HTTP/1.0
- *
- * This function extracts the method, uri, and query (if it exists).
- **/
+ *  * Parse HTTP Request Method and URI.
+ *   *
+ *    * @param   r           Request structure.
+ *     * @return  -1 on error and 0 on success.
+ *      *
+ *       * HTTP Requests come in the form
+ *        *
+ *         *  <METHOD> <URI>[QUERY] HTTP/<VERSION>
+ *          *
+ *           * Examples:
+ *            *
+ *             *  GET / HTTP/1.1
+ *              *  GET /cgi.script?q=foo HTTP/1.0
+ *               *
+ *                * This function extracts the method, uri, and query (if it exists).
+ *                 **/
 int parse_request_method(Request *r) {
     char buffer[BUFSIZ];
-    char *method=NULL;
-    char *uri=NULL;
-    char *query=NULL;
+    char *method = NULL;
+    char *uri = NULL;
+    char *query = NULL;
 
     /* Read line from socket */
     if (fgets(buffer, BUFSIZ, r->file) == NULL) {
@@ -164,33 +164,27 @@ int parse_request_method(Request *r) {
     }
 
     /* Parse method and uri */
-    if((method = strtok(buffer, " ")) == NULL) {
-	debug("Could not parse method");
-	return -1;
+    if ((method = strtok(buffer, " ")) == NULL) {
+        debug("Could not parse method: %s", strerror(errno));
+        goto fail;   
     }
-    if((uri = strtok(NULL, " ")) == NULL) {
-	debug("Could not parse uri");
+    if ((uri = strtok(NULL, " ")) == NULL) {
+        debug("Could not parse uri: %s", strerror(errno)); 
+        goto fail;  
     }
-   
 
     /* Parse query from uri */
-    if(uri != NULL) {
-	//query = uri;
-	query= strtok(uri, "?");
-	if(query!=NULL){
-            debug("query my check: %s", query);
-            query = strtok(NULL," \n\r");
-	   // *(query - 1) = '\0';
+    if (uri != NULL) {
+  query = strtok(query, "?");
+        if (query != NULL) {
+            query = strtok(NULL, " \n\r");
         }
     }
 
     /* Record method, uri, and query in request struct */
-    if(method)
-    	r->method= strdup(method);
-    if(uri)
-	r->uri= strdup(uri);
-    if(query)
-	r->query= strdup(query);
+    if (method) r->method = strdup(method);
+    if (uri)    r->uri    = strdup(uri);
+    if (query)  r->query  = strdup(query);
 
     debug("HTTP METHOD: %s", r->method);
     debug("HTTP URI:    %s", r->uri);
@@ -203,42 +197,41 @@ fail:
 }
 
 /**
- * Parse HTTP Request Headers.
- *
- * @param   r           Request structure.
- * @return  -1 on error and 0 on success.
- *
- * HTTP Headers come in the form:
- *
- *  <NAME>: <VALUE>
- *
- * Example:
- *
- *  Host: localhost:8888
- *  User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:29.0) Gecko/20100101 Firefox/29.0
- *  Accept: text/html,application/xhtml+xml
- *  Accept-Language: en-US,en;q=0.5
- *  Accept-Encoding: gzip, deflate
- *  Connection: keep-alive
- *
- * This function parses the stream from the request socket using the following
- * pseudo-code:
- *
- *  while (buffer = read_from_socket() and buffer is not empty):
- *      name, value = buffer.split(':')
- *      header      = new Header(name, value)
- *      headers.append(header)
- **/
+ *  * Parse HTTP Request Headers.
+ *   *
+ *    * @param   r           Request structure.
+ *     * @return  -1 on error and 0 on success.
+ *      *
+ *       * HTTP Headers come in the form:
+ *        *
+ *         *  <NAME>: <VALUE>
+ *          *
+ *           * Example:
+ *            *
+ *             *  Host: localhost:8888
+ *              *  User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:29.0) Gecko/20100101 Firefox/29.0
+ *               *  Accept: text/html,application/xhtml+xml
+ *                *  Accept-Language: en-US,en;q=0.5
+ *                 *  Accept-Encoding: gzip, deflate
+ *                  *  Connection: keep-alive
+ *                   *
+ *                    * This function parses the stream from the request socket using the following
+ *                     * pseudo-code:
+ *                      *
+ *                       *  while (buffer = read_from_socket() and buffer is not empty):
+ *                        *      name, value = buffer.split(':')
+ *                         *      header      = new Header(name, value)
+ *                          *      headers.append(header)
+ *                           **/
 int parse_request_headers(Request *r) {
     struct header *curr = NULL;
     char buffer[BUFSIZ];
     char *name;
     char *value;
 
-    /* Parse headers from socket */                    /*NEED TO FINISH READING STREAM*/
-    if (fgets(buffer, BUFSIZ, r->file) == NULL) {
-        goto fail;
-    } else {
+    /* Parse headers from socket */
+
+    while (fgets(buffer, BUFSIZ, r->file) && (strlen(buffer) > 2)) {
         chomp(buffer);
         name = skip_whitespace(buffer);
         value = strchr(name, ':');
@@ -260,7 +253,7 @@ int parse_request_headers(Request *r) {
 
 #ifndef NDEBUG
     for (struct header *header = r->headers; header != NULL; header = header->next) {
-    	debug("HTTP HEADER %s = %s", header->name, header->value);
+        debug("HTTP HEADER %s = %s", header->name, header->value);
     }
 #endif
     return 0;
@@ -270,3 +263,4 @@ fail:
 }
 
 /* vim: set expandtab sts=4 sw=4 ts=8 ft=c: */
+ 
