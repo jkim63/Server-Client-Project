@@ -99,10 +99,13 @@ int main(int argc, char *argv[]) {
     }
 
     /* Determine real RootPath */
-    if((RootPath = realpath(RootPath, NULL)) == NULL) {
+    char* temp = strdup(RootPath);
+    if((realpath(temp, RootPath)) == NULL) {
+        free(temp);
         debug("RootPath could not be resolved: %s", strerror(errno));
         return EXIT_FAILURE;
     }
+    free(temp);
 
     log("Listening on port %s", Port);
     debug("RootPath        = %s", RootPath);

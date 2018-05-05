@@ -64,6 +64,7 @@ char * determine_mimetype(const char *path) {
         while (token != NULL) {
             if (streq(token, ext)) {
                 debug("Mimetype: %s", mimetype);
+                fclose(fs);
                 return strdup(mimetype);
             }
             token = strtok(NULL, WHITESPACE);
@@ -71,7 +72,7 @@ char * determine_mimetype(const char *path) {
         }
 
     }
-
+    fclose(fs);
     return strdup(DefaultMimeType);
 }
 

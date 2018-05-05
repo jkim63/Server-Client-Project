@@ -104,6 +104,10 @@ void free_request(Request *r) {
         while (r->headers != NULL) {
             Header *temp = r->headers;
             r->headers = r->headers->next;
+            if(temp->name)
+                free(temp->name);
+            if(temp->value)
+                free(temp->value);
             free(temp);
         }
     }

@@ -191,8 +191,12 @@ HTTPStatus handle_cgi_request(Request *r) {
     Header *head = r->headers;
 
     setenv("DOCUMENT_ROOT", RootPath, 1);
-        
-    setenv("QUERY_STRING", r->query, 1);
+       
+    if (r->query) {
+        setenv("QUERY_STRING", r->query, 1);
+    } else {
+        setenv("QUERY_STRING", "", 1);
+    }
 
     setenv("REMOTE_ADDR", r->host, 1);
 
