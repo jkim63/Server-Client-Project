@@ -19,6 +19,7 @@ int single_server(int sfd) {
         /* Accept request */
         Request *r = accept_request(sfd);
         /* Handle request */
+        debug("going into handle_request");
         HTTPStatus status = handle_request(r);
         debug("Request Status: %s", http_status_string(status));
         /* Free request */
