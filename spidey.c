@@ -97,12 +97,6 @@ int main(int argc, char *argv[]) {
         debug("socket_listen fail...");
         return EXIT_FAILURE;
     }
-
-    int sfd = socket_listen(Port);
-    if(sfd < 0) {
-        debug("socket_listen fail...");
-        return EXIT_FAILURE;
-    }
     /* Determine real RootPath */
     if( (RootPath = realpath(RootPath, NULL)) == NULL) {
         debug("RootPath could not be resolved: %s", strerror(errno));
